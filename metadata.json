@@ -1,0 +1,7 @@
+{
+  "name": "Remix: 22 Feb of ProCash - AI Banking \u0026 Business Calculator",
+  "description": "A professional-grade cash calculator and financial assistant for bankers and business leaders, featuring real-time AI voice interaction, market search grounding, and complex financial reasoning.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
