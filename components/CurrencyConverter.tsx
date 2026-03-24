@@ -9,12 +9,13 @@ interface CurrencyConverterProps {
 }
 
 const CurrencyConverter: React.FC<CurrencyConverterProps> = ({ initialAmount = 0, initialCurrency = 'USD' }) => {
-  const [amount, setAmount] = useState<number>(initialAmount);
+  const [amount, setAmount] = useState<string>(initialAmount > 0 ? initialAmount.toString() : '');
   const [fromCurrency, setFromCurrency] = useState<string>(initialCurrency);
   const [toCurrency, setToCurrency] = useState<string>('EUR');
   const [result, setResult] = useState<number | null>(null);
   const [rate, setRate] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<ConversionRecord[]>(() => {
     try {
       const saved = localStorage.getItem('procash_conversion_history');
@@ -28,20 +29,32 @@ const CurrencyConverter: React.FC<CurrencyConverterProps> = ({ initialAmount = 0
     localStorage.setItem('procash_conversion_history', JSON.stringify(history));
   }, [history]);
 
+  useEffect(() => {
+    setFromCurrency(initialCurrency);
+  }, [initialCurrency]);
+
+  useEffect(() => {
+    setResult(null);
+    setRate(null);
+    setError(null);
+  }, [fromCurrency, toCurrency, amount]);
+
   // Update local state when props change, but only if user hasn't interacted much? 
   // Actually, let's just use props as initial values or if they change significantly.
   // For now, let's just respect initial values on mount.
   
   const handleConvert = async () => {
-    if (!amount || !fromCurrency || !toCurrency) return;
+    const numAmount = parseFloat(amount);
+    if (!amount || isNaN(numAmount) || !fromCurrency || !toCurrency) return;
     
     setLoading(true);
+    setError(null);
     try {
       const rates = await currencyService.getRates(fromCurrency);
       const currentRate = rates.rates[toCurrency];
       
       if (currentRate) {
-        const convertedAmount = amount * currentRate;
+        const convertedAmount = numAmount * currentRate;
         setResult(convertedAmount);
         setRate(currentRate);
         
@@ -50,15 +63,18 @@ const CurrencyConverter: React.FC<CurrencyConverterProps> = ({ initialAmount = 0
           timestamp: Date.now(),
           fromCurrency,
           toCurrency,
-          amount,
+          amount: numAmount,
           result: convertedAmount,
           rate: currentRate
         };
         
         setHistory(prev => [newRecord, ...prev].slice(0, 10)); // Keep last 10
+      } else {
+        setError('Rate not found');
       }
     } catch (error) {
       console.error('Conversion failed', error);
+      setError('Conversion failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -74,11 +90,27 @@ const CurrencyConverter: React.FC<CurrencyConverterProps> = ({ initialAmount = 0
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
            <div className="space-y-1">
-             <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Amount</label>
+             <div className="flex justify-between items-center">
+               <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Amount</label>
+               {amount && (
+                 <button 
+                   type="button"
+                   onClick={() => {
+                     setAmount('');
+                     setResult(null);
+                     setRate(null);
+                   }}
+                   className="text-[9px] font-bold text-slate-300 hover:text-red-500 uppercase tracking-wider transition-colors"
+                 >
+                   Clear
+                 </button>
+               )}
+             </div>
              <input 
                type="number" 
                value={amount}
-               onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+               placeholder="0"
+               onChange={(e) => setAmount(e.target.value)}
                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
              />
            </div>
@@ -122,11 +154,17 @@ const CurrencyConverter: React.FC<CurrencyConverterProps> = ({ initialAmount = 0
 
         <button 
           onClick={handleConvert}
-          disabled={loading || amount <= 0}
+          disabled={loading || !amount || parseFloat(amount) <= 0}
           className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200"
         >
           {loading ? 'Converting...' : 'Convert'}
         </button>
+
+        {error && (
+          <div className="mt-2 p-2 bg-red-50 text-red-500 text-[10px] font-bold text-center rounded-lg border border-red-100">
+            {error}
+          </div>
+        )}
 
         {result !== null && (
           <div className="mt-4 p-4 bg-indigo-50 rounded-xl border border-indigo-100 text-center">

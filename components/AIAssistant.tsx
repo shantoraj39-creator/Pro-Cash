@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
 import { geminiService } from '../services/geminiService';
 import { ChatMessage, AIServiceMode, Denomination } from '../types';
 import { decode, decodeAudioData, createPcmBlob } from '../services/audioUtils';
@@ -147,14 +147,18 @@ const AIAssistant = forwardRef<AIAssistantRef, Props>(({ denominations, onComman
                 onCommand(fc.args);
                 sessionPromise.then(session => {
                   session.sendToolResponse({
-                    functionResponses: { id: fc.id, name: fc.name, response: { result: "ok" } }
+                    functionResponses: [{
+                      id: fc.id,
+                      name: fc.name,
+                      response: { result: "ok" }
+                    }]
                   });
                 });
               }
             }
           }
 
-          const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData.data;
+          const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
           if (base64Audio) {
             nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputCtx.currentTime);
             const buffer = await decodeAudioData(decode(base64Audio), outputCtx, 24000, 1);
@@ -187,6 +191,15 @@ const AIAssistant = forwardRef<AIAssistantRef, Props>(({ denominations, onComman
     isLiveActive
   }));
 
+  useEffect(() => {
+    return () => {
+      liveSessionRef.current?.close();
+      dictationSessionRef.current?.close();
+      inputContextRef.current?.close();
+      audioContextRef.current?.close();
+    };
+  }, []);
+
   return (
     <div className="flex flex-col h-full bg-slate-50/50 backdrop-blur-md border-l border-slate-200">
       <div className="p-6 border-b border-slate-200 glass">
@@ -196,7 +209,7 @@ const AIAssistant = forwardRef<AIAssistantRef, Props>(({ denominations, onComman
               <div className={`absolute inset-0 rounded-full blur-sm ${isLiveActive ? 'bg-red-400 animate-pulse' : 'bg-indigo-400 opacity-50'}`}></div>
               <span className={`relative w-2.5 h-2.5 rounded-full ${isLiveActive ? 'bg-red-500' : 'bg-indigo-600'}`}></span>
             </div>
-            {isLiveActive ? 'Live Command' : 'AI Financial Expert'}
+            {isLiveActive ? 'Live Command' : 'Pro Cash Assistant'}
           </h3>
           {mode !== AIServiceMode.LIVE && (
             <label className="flex items-center gap-2 cursor-pointer group">
@@ -232,7 +245,7 @@ const AIAssistant = forwardRef<AIAssistantRef, Props>(({ denominations, onComman
                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 1.891.527 3.653 1.438 5.16L2 22l4.84-1.438C8.347 21.473 10.109 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18c-1.731 0-3.334-.486-4.698-1.328l-.337-.208-2.903.864.864-2.903-.208-.337A7.946 7.946 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z" /></svg>
             </div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-loose">
-              Pro-Level Financial Intelligence<br/>
+              Pro-Level Cash Intelligence<br/>
               <span className="font-normal normal-case opacity-60">Speak or type your commands.</span>
             </p>
           </div>

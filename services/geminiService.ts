@@ -102,10 +102,18 @@ export const geminiService = {
         
         CRITICAL RULES:
         1. When the user mentions a number and a denomination (e.g., "five hundreds", "ten twenties"), IMMEDIATELY use 'controlCalculator'.
-        2. Mapping logic: "hundreds" -> "$100", "fifties" -> "$50", "twenties" -> "$20", "tens" -> "$10", "fives" -> "$5", "ones" -> "$1".
-        3. If the user says "clear", "reset", or "start over", use action="clear".
-        4. Do not explain your actions unless asked. Keep verbal responses to "Updated", "Done", or "Cleared".
-        5. Priority is accuracy and speed.`,
+        2. You MUST map the user's spoken denomination to one of the EXACT AVAILABLE LABELS provided above.
+           - Example: "hundreds" -> "$100" (or "€100", etc. depending on context)
+           - Example: "fifties" -> "$50"
+           - Example: "twenties" -> "$20"
+           - Example: "tens" -> "$10"
+           - Example: "fives" -> "$5"
+           - Example: "ones" -> "$1"
+           - Example: "quarters" -> "25¢"
+        3. The 'label' parameter in the function call MUST match one of the AVAILABLE LABELS exactly. Do not send "hundreds" or "50 dollar bill"; send "$100" or "$50".
+        4. If the user says "clear", "reset", or "start over", use action="clear".
+        5. Do not explain your actions unless asked. Keep verbal responses to "Updated", "Done", or "Cleared".
+        6. Priority is accuracy and speed.`,
       },
     });
   }

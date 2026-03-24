@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "phoneNumber"]
+    },
+    "CashRecord": {
+      "title": "CashRecord",
+      "description": "A single cash calculation record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "currency": { "type": "string" },
+        "total": { "type": "number" },
+        "counts": { "type": "object" }
+      },
+      "required": ["id", "uid", "timestamp", "currency", "total", "counts"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/users/{userId}/records/{recordId}": {
+      "schema": "CashRecord",
+      "description": "User's cash calculation records"
+    }
+  }
+}

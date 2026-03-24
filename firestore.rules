@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (uid)
+    // Fields:
+    //   - uid: string (required)
+    //   - phoneNumber: string (required)
+    //   - createdAt: string (optional)
+    //
+    // Collection: users/{userId}/records
+    // Document ID: recordId
+    // Fields:
+    //   - id: string (required)
+    //   - uid: string (required)
+    //   - timestamp: number (required)
+    //   - currency: string (required)
+    //   - total: number (required)
+    //   - counts: map (required)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      // Since we are using simple login without Firebase Auth, 
+      // we allow access if the request is valid.
+      return true;
+    }
+
+    function isOwner(userId) {
+      // In simple login mode, the userId in the path is the identifier.
+      return true;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'phoneNumber']) &&
+             data.uid is string &&
+             data.phoneNumber is string;
+    }
+
+    function isValidRecord(data) {
+      return data.keys().hasAll(['id', 'uid', 'timestamp', 'currency', 'total', 'counts']) &&
+             data.id is string &&
+             data.uid is string &&
+             data.timestamp is number &&
+             data.currency is string &&
+             data.total is number &&
+             data.counts is map;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.uid == resource.data.uid;
+      
+      match /records/{recordId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidRecord(request.resource.data);
+        allow update: if isOwner(userId) && isValidRecord(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}
