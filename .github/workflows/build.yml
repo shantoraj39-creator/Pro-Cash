@@ -37,7 +37,7 @@ jobs:
           cat <<EOF > capacitor.config.json
           {
             "appId": "com.ec.aoo",
-            "appName": "ProCash",
+            "appName": "Pro-Cash",
             "webDir": "dist",
             "server": {
               "androidScheme": "https",
